@@ -1,0 +1,764 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Realtime Attendance Dashboard (SSE)</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+
+    <style>
+        :root {
+            --blue-900: #2a478f;
+            --blue-700: #4f6480;
+            --yellow-500: #d83a3a;
+            --yellow-300: #ffb3b3;
+            --white: #ffffff;
+            --gray-100: #f3f7fb;
+            --gray-600: #5f6c7b;
+            --text-main: #0f1f33;
+        }
+
+        body {
+            background:
+                radial-gradient(circle at 92% 96%, rgba(216, 58, 58, 0.18) 0%, rgba(216, 58, 58, 0) 42%),
+                linear-gradient(145deg, #ffffff 0%, #f4f4f4 58%, #eed6d6 100%);
+            font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+            color: var(--text-main);
+            min-height: 100vh;
+            margin: 0;
+        }
+
+        .dashboard-shell {
+            border: 4px solid var(--blue-900);
+            border-radius: 14px;
+            overflow: hidden;
+            box-shadow: 0 10px 28px rgba(3, 78, 162, 0.18);
+            background: var(--white);
+        }
+
+        .top-bar {
+            background: linear-gradient(135deg, #b71c1c 0%, #e53935 72%, #ffffff 100%);
+            color: var(--white);
+            padding: 14px 18px;
+            font-weight: 700;
+            letter-spacing: 0.3px;
+        }
+
+        .school-brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .school-title {
+            font-size: clamp(1.05rem, 1vw + 0.7rem, 1.6rem);
+            font-weight: 800;
+            line-height: 1.2;
+        }
+
+        .school-logo {
+            width: 40px;
+            height: 40px;
+            object-fit: contain;
+            border-radius: 50%;
+            background: #ffffff;
+            padding: 2px;
+        }
+
+        .content-grid {
+            background: rgba(243, 247, 251, 0.9);
+        }
+
+        .highlight-panel {
+            border-right: 4px solid var(--blue-900);
+            padding: 16px;
+        }
+
+        .panel-head {
+            background: linear-gradient(120deg, #b71c1c 0%, #e53935 100%);
+            color: var(--white);
+            border-radius: 10px;
+            padding: 10px 14px;
+            font-size: 1.15rem;
+            font-weight: 700;
+            margin-bottom: 14px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .status-pill {
+            background: var(--yellow-500);
+            color: #0b2650;
+            border-radius: 999px;
+            font-size: 0.82rem;
+            padding: 4px 10px;
+            font-weight: 800;
+        }
+
+        .photo-wrap {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            /* gap: 16px; */
+            align-items: stretch;
+            /* margin-bottom: 14px; */
+            position: relative;
+        }
+
+        .scan-ok-badge {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            width: 66px;
+            height: 66px;
+            border-radius: 50%;
+            background: #4caf50;
+            border: 6px solid #ffffff;
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+            z-index: 5;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .scan-ok-badge::before {
+            content: "\2713";
+            color: #ffffff;
+            font-size: 34px;
+            font-weight: 900;
+            line-height: 1;
+        }
+
+        .photo-card {
+            /* background: #dbeeff; */
+            /* border: 3px solid #78aeea; */
+            /* border-radius: 10px; */
+            overflow: hidden;
+            aspect-ratio: 3 / 4;
+            /* min-height: 0; */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .photo-card img {
+            width: 70%;
+            height: 70%;
+            object-fit: cover;
+            display: block;
+        }
+
+        .meta-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 16px;
+            margin-bottom: 25px;
+        }
+
+        .meta-item {
+            background: transparent;
+            border: none;
+            border-radius: 0;
+            padding: 4px 2px;
+            text-align: center;
+        }
+
+        .meta-label {
+            color: var(--gray-600);
+            font-size: 2.5rem;
+            margin-bottom: 2px;
+            font-weight: 700;
+        }
+
+        .meta-value {
+            font-size: 1.9rem;
+            font-weight: 800;
+            line-height: 1.1;
+            word-break: break-word;
+        }
+
+        .name-box {
+            background: var(--white);
+            border: 2px solid #9fc3ec;
+            border-radius: 10px;
+            padding: 12px;
+            font-size: 1.8rem;
+            font-weight: 900;
+            text-align: center;
+            margin-bottom: 12px;
+            line-height: 1.2;
+        }
+
+        .icon-label {
+            margin-right: 6px;
+        }
+
+        .ui-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 1.1em;
+            margin-right: 6px;
+        }
+
+        .icon-id {
+            color: #1e88e5;
+        }
+
+        .icon-name {
+            color: #1e88e5;
+        }
+
+        .icon-time {
+            color: #7f8c8d;
+        }
+
+        .clock-bar {
+            background: linear-gradient(90deg, var(--yellow-500), #ffffff);
+            color: #7a1010;
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            font-size: 2rem;
+            font-weight: 900;
+            letter-spacing: 0.5px;
+        }
+
+        .list-panel {
+            padding: 16px;
+            max-height: 100%;
+            /* overflow-y: auto; */
+            display: flex;
+            flex-direction: column;
+            /* justify-content: space-between; */
+            gap: 10px;
+        }
+
+        .mini-card {
+            border: 3px solid var(--blue-900);
+            border-radius: 10px;
+            background: var(--white);
+            /* overflow: hidden; */
+            margin-bottom: 0;
+            box-shadow: 0 6px 12px rgba(3, 78, 162, 0.08);
+        }
+
+        .mini-card-body {
+            display: grid;
+            grid-template-columns: 90px 90px 1fr;
+            gap: 20px;
+            padding: 15px;
+            align-items: center;
+        }
+
+        .mini-img {
+            border-radius: 8px;
+            overflow: hidden;
+            background: #dbeeff;
+            border: 2px solid #9fc3ec;
+            height: 120px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .mini-img.no-frame,
+        .photo-card.no-frame {
+            background: transparent;
+            border-color: transparent;
+        }
+
+        .mini-img img {
+            width: 100%;
+            height: 120px;
+            object-fit: cover;
+            display: block;
+        }
+
+        .mini-img img.is-fallback,
+        .photo-card img.is-fallback {
+            object-fit: contain;
+            background: transparent;
+        }
+
+        .mini-text {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: 4px;
+            font-weight: 700;
+        }
+
+        .mini-id {
+            font-size: 1.25rem;
+            color: #0a2f66;
+            line-height: 1;
+        }
+
+        .mini-name {
+            display: flex;
+            align-items: flex-start;
+            gap: 6px;
+            font-size: 1.25rem;
+            line-height: 1.05;
+            font-weight: 900;
+        }
+
+        .mini-name-text {
+            display: flex;
+            flex-direction: column;
+            line-height: 1.15;
+        }
+
+        .mini-lastname {
+            margin-top: 2px;
+        }
+
+        .mini-time {
+            color: #10743c;
+            font-size: 1.25rem;
+        }
+
+        .mini-icon {
+            margin-right: 6px;
+        }
+
+        .empty-state {
+            border: 0;
+            background: transparent;
+            border-radius: 0;
+            padding: 8px 6px 10px;
+            text-align: center;
+            color: #4a6487;
+            font-weight: 700;
+            font-size: 1.05rem;
+        }
+
+        .waiting-wrap {
+            margin-bottom: 6px;
+        }
+
+        .waiting-card {
+            background: #ffffff;
+            border: 2px solid #d6e5f7;
+            border-radius: 12px;
+            margin: 2px;
+        }
+
+        .waiting-card img {
+            width: 84%;
+            height: 84%;
+            object-fit: contain;
+        }
+
+        @media (max-width: 1200px) {
+            .mini-card-body {
+                grid-template-columns: 80px 80px 1fr;
+                gap: 10px;
+                padding: 8px;
+            }
+
+            .mini-img,
+            .mini-img img {
+                height: 84px;
+            }
+
+            .mini-name {
+                font-size: 1.25rem;
+            }
+
+            .clock-bar {
+                font-size: 1.6rem;
+            }
+        }
+
+        @media (max-width: 991px) {
+            .highlight-panel {
+                border-right: none;
+                border-bottom: 4px solid var(--blue-900);
+            }
+
+            .list-panel {
+                justify-content: flex-start;
+            }
+
+            .name-box {
+                font-size: 1.35rem;
+            }
+
+            .meta-value {
+                font-size: 1.35rem;
+            }
+
+            .clock-bar {
+                font-size: 1.3rem;
+            }
+
+            .mini-id {
+                font-size: 1.05rem;
+            }
+
+            .mini-name {
+                font-size: 1.02rem;
+            }
+
+            .mini-time {
+                font-size: 1rem;
+            }
+        }
+
+        @media (max-width: 575px) {
+            .photo-wrap {
+                grid-template-columns: 1fr;
+            }
+
+            .scan-ok-badge {
+                display: none;
+            }
+
+            .meta-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .mini-card-body {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .mini-img,
+            .mini-img img {
+                height: 78px;
+            }
+
+            .mini-text {
+                grid-column: 1 / -1;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div id="app" class="container-fluid py-3 py-lg-4 px-2 px-lg-3">
+        <div class="dashboard-shell">
+            <div class="top-bar d-flex flex-wrap justify-content-between align-items-center gap-2">
+                <div class="school-brand">
+                    <img src="rpg15-Logo.png" alt="RPG15 Logo" class="school-logo">
+                    <div class="school-title">โรงเรียนราชประชานุเคราะห์ 15 จังหวัดเชียงราย</div>
+                </div>
+            </div>
+
+            <div class="row g-0 content-grid">
+                <div class="col-lg-8 highlight-panel">
+                    <div class="panel-head">
+                        <div class="school-title">ลงเวลาเข้าเรียน</div>
+                        <!-- <span>{{ sn || '-' }}</span> -->
+                    </div>
+
+                    <template v-if="latestItem">
+                        <div class="photo-wrap">
+                            <div class="photo-card" :class="{ 'no-frame': isMissingImage(latestItem.picture) }">
+                                <img :src="buildImageUrl(latestItem.picture)"
+                                    :class="{ 'is-fallback': isMissingImage(latestItem.picture) }" alt="รูปหลัก"
+                                    @error="setFallbackImage($event)">
+                            </div>
+                            <div class="scan-ok-badge" aria-label="scan success"></div>
+                            <div class="photo-card" :class="{ 'no-frame': isMissingImage(latestItem.imageUrl) }">
+                                <img :src="buildImageUrl(latestItem.imageUrl)"
+                                    :class="{ 'is-fallback': isMissingImage(latestItem.imageUrl) }" alt="รูปสแกน"
+                                    @error="setFallbackImage($event)">
+                            </div>
+                        </div>
+
+                        <div class="meta-grid">
+                            <div class="meta-item">
+                                <div class="meta-label"><i class="bi bi-person-vcard-fill ui-icon icon-id"></i></div>
+                                <div class="meta-value">{{ displayUserId(latestItem) }}</div>
+                            </div>
+                            <div class="meta-item">
+                                <div class="meta-label"><i class="bi bi-person-fill ui-icon icon-name"></i></div>
+                                <div class="meta-value">{{ normalizeName(latestItem.name) || '-' }}</div>
+                            </div>
+                            <div class="meta-item">
+                                <div class="meta-label"><i class="bi bi-clock-fill ui-icon icon-time"></i></div>
+                                <div class="meta-value">{{ formatTime(latestItem.timeStamp) }}</div>
+                            </div>
+                        </div>
+                    </template>
+
+                    <template v-else>
+                        <div class="photo-wrap waiting-wrap">
+                            <div class="photo-card waiting-card">
+                                <img src="rpg15-Logo.png" alt="โลโก้โรงเรียน">
+                            </div>
+                            <div class="scan-ok-badge" aria-hidden="true"></div>
+                            <div class="photo-card waiting-card">
+                                <img src="rpg15-Logo.png" alt="โลโก้โรงเรียน">
+                            </div>
+                        </div>
+                        <div class="empty-state">รอข้อมูลจากเครื่องสแกน...</div>
+                    </template>
+
+                    <div class="clock-bar">{{ nowDisplay }}</div>
+                </div>
+
+                <div class="col-lg-4 list-panel">
+                    <div class="mini-card" v-for="item in sidebarItems"
+                        :key="item._id || `${item.timeStamp}-${item.name}`">
+                        <div class="mini-card-body">
+                            <div class="mini-img" :class="{ 'no-frame': isMissingImage(item.picture) }">
+                                <img :src="buildImageUrl(item.picture)"
+                                    :class="{ 'is-fallback': isMissingImage(item.picture) }" alt="รูปหลัก"
+                                    @error="setFallbackImage($event)">
+                            </div>
+                            <div class="mini-img" :class="{ 'no-frame': isMissingImage(item.imageUrl) }">
+                                <img :src="buildImageUrl(item.imageUrl)"
+                                    :class="{ 'is-fallback': isMissingImage(item.imageUrl) }" alt="รูปสแกน"
+                                    @error="setFallbackImage($event)">
+                            </div>
+                            <div class="mini-text">
+                                <div class="mini-id"><i class="bi bi-person-vcard-fill mini-icon icon-id"></i>{{
+                                    displayUserId(item) }}</div>
+                                <div class="mini-name"><i class="bi bi-person-fill mini-icon icon-name"></i>
+                                    <span class="mini-name-text">
+                                        <span>{{ splitName(item.name).first }}</span>
+                                        <span class="mini-lastname" v-if="splitName(item.name).last">{{
+                                            splitName(item.name).last }}</span>
+                                    </span>
+                                </div>
+                                <div class="mini-time"><i class="bi bi-clock-fill mini-icon icon-time"></i>{{
+                                    formatTime(item.timeStamp) }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const { createApp } = Vue;
+        const API_BASE = 'https://rpg15.zoftdd.com/ckk_api/';
+        const FALLBACK_IMAGE = 'rpg15-Logo.png';
+        const notificationAudio = new Audio('notify.mp3');
+
+        createApp({
+            data() {
+                return {
+                    records: [],
+                    status: 'connecting...',
+                    eventSource: null,
+                    sn: '',
+                    nowDisplay: '',
+                    timer: null,
+                    reconnectTimer: null
+                };
+            },
+            mounted() {
+                const params = new URLSearchParams(window.location.search);
+                this.sn = params.get('sn') || '';
+
+                this.updateNow();
+                this.timer = setInterval(this.updateNow, 1000);
+                this.connectSSE();
+            },
+            beforeUnmount() {
+                if (this.timer) {
+                    clearInterval(this.timer);
+                }
+
+                if (this.reconnectTimer) {
+                    clearTimeout(this.reconnectTimer);
+                }
+
+                if (this.eventSource) {
+                    this.eventSource.close();
+                }
+            },
+            computed: {
+                sortedRecords() {
+                    return [...this.records].sort((a, b) => this.parseDateTime(b.timeStamp) - this.parseDateTime(a.timeStamp));
+                },
+                latestSix() {
+                    return this.sortedRecords.slice(0, 6);
+                },
+                latestItem() {
+                    return this.latestSix.length ? this.latestSix[0] : null;
+                },
+                sidebarItems() {
+                    return this.latestSix.slice(1, 6);
+                }
+            },
+            methods: {
+                updateNow() {
+                    const now = new Date();
+                    const date = now.toLocaleDateString('th-TH', {
+                        year: 'numeric',
+                        month: '2-digit',
+                        day: '2-digit'
+                    });
+                    const time = now.toLocaleTimeString('th-TH', {
+                        hour12: false
+                    });
+                    this.nowDisplay = `${date} ${time}`;
+                },
+                parseDateTime(value) {
+                    if (!value) {
+                        return new Date(0);
+                    }
+
+                    const normalized = String(value).replace(' ', 'T');
+                    const date = new Date(normalized);
+
+                    if (Number.isNaN(date.getTime())) {
+                        return new Date(0);
+                    }
+
+                    return date;
+                },
+                formatTime(value) {
+                    if (!value) {
+                        return '-';
+                    }
+
+                    const source = String(value);
+                    const parts = source.split(' ');
+                    if (parts.length >= 2) {
+                        return parts[1].slice(0, 5);
+                    }
+
+                    const parsed = this.parseDateTime(value);
+                    if (parsed.getTime() === 0) {
+                        return source;
+                    }
+
+                    return parsed.toLocaleTimeString('th-TH', {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        hour12: false
+                    });
+                },
+                displayUserId(item) {
+                    return item.userid || item.userId || item.enrollid || '-';
+                },
+                normalizeName(value) {
+                    if (!value) {
+                        return '';
+                    }
+
+                    return String(value)
+                        .trim()
+                        .replace(/^(เด็กหญิง|เด็กชาย|นาย|นางสาว)\s+/i, '')
+                        .replace(/\s+/g, ' ');
+                },
+                splitName(value) {
+                    const cleaned = this.normalizeName(value);
+                    if (!cleaned) {
+                        return { first: '-', last: '' };
+                    }
+
+                    const parts = cleaned.split(' ');
+                    return {
+                        first: parts[0] || '-',
+                        last: parts.slice(1).join(' ')
+                    };
+                },
+                buildImageUrl(path) {
+                    if (!path) {
+                        return FALLBACK_IMAGE;
+                    }
+
+                    if (/^https?:\/\//i.test(path)) {
+                        return path;
+                    }
+
+                    return `${API_BASE}${path}`;
+                },
+                isMissingImage(path) {
+                    return !path;
+                },
+                setFallbackImage(event) {
+                    event.target.src = FALLBACK_IMAGE;
+                    event.target.classList.add('is-fallback');
+
+                    if (event.target.parentElement) {
+                        event.target.parentElement.classList.add('no-frame');
+                    }
+                },
+                speakName(name) {
+                    if ('speechSynthesis' in window && name) {
+                        const message = `${name} มีผู้ปกครองมารับที่ประตู1`;
+                        const utter = new SpeechSynthesisUtterance(message);
+                        utter.lang = 'th-TH';
+                        window.speechSynthesis.speak(utter);
+                    }
+                },
+                addIncomingData(payload) {
+                    if (Array.isArray(payload)) {
+                        const replaced = payload.filter((item) => item && typeof item === 'object');
+                        this.records = replaced
+                            .sort((a, b) => this.parseDateTime(b.timeStamp) - this.parseDateTime(a.timeStamp))
+                            .slice(0, 6);
+                        return;
+                    }
+
+                    if (!payload || typeof payload !== 'object') {
+                        return;
+                    }
+
+                    this.records.push(payload);
+
+                    notificationAudio.play().catch(() => {
+                    });
+
+                    this.speakName(payload.name);
+
+                    this.records = this.sortedRecords.slice(0, 6);
+                },
+                connectSSE() {
+                    if (!this.sn) {
+                        this.status = 'missing sn';
+                        return;
+                    }
+
+                    const streamUrl = `${API_BASE}event/stream?sn=${encodeURIComponent(this.sn)}`;
+                    this.eventSource = new EventSource(streamUrl);
+
+                    this.eventSource.onopen = () => {
+                        this.status = 'connected';
+                        console.log('SSE connected:', streamUrl);
+                    };
+
+                    this.eventSource.onmessage = (event) => {
+                        try {
+                            const payload = JSON.parse(event.data);
+                            this.addIncomingData(payload);
+                        } catch (error) {
+                            console.error('Invalid SSE payload', error, event.data);
+                        }
+                    };
+
+                    this.eventSource.onerror = () => {
+                        this.status = 'disconnected (reconnecting...)';
+                        console.warn('SSE error, reconnecting...');
+
+                        if (this.eventSource) {
+                            this.eventSource.close();
+                        }
+
+                        this.reconnectTimer = setTimeout(() => {
+                            this.connectSSE();
+                        }, 3000);
+                    };
+                }
+            }
+        }).mount('#app');
+    </script>
+</body>
+
+</html>
