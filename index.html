@@ -12,6 +12,18 @@
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
 
     <style>
+        html,
+        body {
+            height: 100%;
+            overflow: hidden;
+        }
+
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+        }
+
         :root {
             --blue-900: #2a478f;
             --blue-700: #4f6480;
@@ -33,12 +45,21 @@
             margin: 0;
         }
 
+        #app.container-fluid {
+            height: 100dvh;
+            padding-top: 8px;
+            padding-bottom: 8px;
+        }
+
         .dashboard-shell {
             border: 4px solid var(--blue-900);
             border-radius: 14px;
             overflow: hidden;
             box-shadow: 0 10px 28px rgba(3, 78, 162, 0.18);
             background: var(--white);
+            height: 100%;
+            display: flex;
+            flex-direction: column;
         }
 
         .top-bar {
@@ -72,11 +93,25 @@
 
         .content-grid {
             background: rgba(243, 247, 251, 0.9);
+            flex: 1;
+            min-height: 0;
         }
 
         .highlight-panel {
             border-right: 4px solid var(--blue-900);
             padding: 16px;
+            height: 100%;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .highlight-main {
+            flex: 1;
+            min-height: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
         }
 
         .panel-head {
@@ -141,7 +176,7 @@
             /* border: 3px solid #78aeea; */
             /* border-radius: 10px; */
             overflow: hidden;
-            aspect-ratio: 3 / 4;
+            aspect-ratio: 4 / 3;
             /* min-height: 0; */
             display: flex;
             align-items: center;
@@ -149,8 +184,8 @@
         }
 
         .photo-card img {
-            width: 70%;
-            height: 70%;
+            width: 100%;
+            height: 100%;
             object-fit: cover;
             display: block;
         }
@@ -229,6 +264,7 @@
             font-size: 2rem;
             font-weight: 900;
             letter-spacing: 0.5px;
+            margin-top: auto;
         }
 
         .list-panel {
@@ -239,6 +275,7 @@
             flex-direction: column;
             /* justify-content: space-between; */
             gap: 10px;
+            overflow: hidden;
         }
 
         .mini-card {
@@ -252,8 +289,8 @@
 
         .mini-card-body {
             display: grid;
-            grid-template-columns: 90px 90px 1fr;
-            gap: 20px;
+            grid-template-columns: 104px 104px 1fr;
+            gap: 24px;
             padding: 15px;
             align-items: center;
         }
@@ -263,7 +300,7 @@
             overflow: hidden;
             background: #dbeeff;
             border: 2px solid #9fc3ec;
-            height: 120px;
+            height: 132px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -277,7 +314,7 @@
 
         .mini-img img {
             width: 100%;
-            height: 120px;
+            height: 132px;
             object-fit: cover;
             display: block;
         }
@@ -292,7 +329,7 @@
             display: flex;
             flex-direction: column;
             justify-content: center;
-            gap: 4px;
+            gap: 2px;
             font-weight: 700;
         }
 
@@ -307,14 +344,13 @@
             align-items: flex-start;
             gap: 6px;
             font-size: 1.25rem;
-            line-height: 1.05;
+            line-height: 1.15;
             font-weight: 900;
         }
 
         .mini-name-text {
-            display: flex;
-            flex-direction: column;
-            line-height: 1.15;
+            display: inline;
+            line-height: 1.1;
         }
 
         .mini-lastname {
@@ -353,21 +389,21 @@
         }
 
         .waiting-card img {
-            width: 84%;
-            height: 84%;
-            object-fit: contain;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
         }
 
         @media (max-width: 1200px) {
             .mini-card-body {
-                grid-template-columns: 80px 80px 1fr;
-                gap: 10px;
+                grid-template-columns: 92px 92px 1fr;
+                gap: 14px;
                 padding: 8px;
             }
 
             .mini-img,
             .mini-img img {
-                height: 84px;
+                height: 96px;
             }
 
             .mini-name {
@@ -444,12 +480,12 @@
 </head>
 
 <body>
-    <div id="app" class="container-fluid py-3 py-lg-4 px-2 px-lg-3">
+    <div id="app" class="container-fluid px-2 px-lg-3">
         <div class="dashboard-shell">
             <div class="top-bar d-flex flex-wrap justify-content-between align-items-center gap-2">
                 <div class="school-brand">
-                    <img src="SatitCMU.png" alt="RPG15 Logo" class="school-logo">
-                    <div class="school-title">โรงเรียนราชประชานุเคราะห์ 15 จังหวัดเชียงราย</div>
+                    <img src="SatitCMU.png" alt="SatitCMU Logo" class="school-logo">
+                    <div class="school-title">โรงเรียนสาธิตมหาวิทยาลัยเชียงใหม่ จังหวัดเชียงใหม่</div>
                 </div>
             </div>
 
@@ -460,49 +496,54 @@
                         <!-- <span>{{ sn || '-' }}</span> -->
                     </div>
 
-                    <template v-if="latestItem">
-                        <div class="photo-wrap">
-                            <div class="photo-card" :class="{ 'no-frame': isMissingImage(latestItem.picture) }">
-                                <img :src="buildImageUrl(latestItem.picture)"
-                                    :class="{ 'is-fallback': isMissingImage(latestItem.picture) }" alt="รูปหลัก"
-                                    @error="setFallbackImage($event)">
-                            </div>
-                            <div class="scan-ok-badge" aria-label="scan success"></div>
-                            <div class="photo-card" :class="{ 'no-frame': isMissingImage(latestItem.imageUrl) }">
-                                <img :src="buildImageUrl(latestItem.imageUrl)"
-                                    :class="{ 'is-fallback': isMissingImage(latestItem.imageUrl) }" alt="รูปสแกน"
-                                    @error="setFallbackImage($event)">
-                            </div>
-                        </div>
+                    <div class="highlight-main">
 
-                        <div class="meta-grid">
-                            <div class="meta-item">
-                                <div class="meta-label"><i class="bi bi-person-vcard-fill ui-icon icon-id"></i></div>
-                                <div class="meta-value">{{ displayUserId(latestItem) }}</div>
+                        <template v-if="latestItem">
+                            <div class="photo-wrap">
+                                <div class="photo-card" :class="{ 'no-frame': isMissingImage(latestItem.picture) }">
+                                    <img :src="buildImageUrl(latestItem.picture)"
+                                        :class="{ 'is-fallback': isMissingImage(latestItem.picture) }" alt="รูปหลัก"
+                                        @error="setFallbackImage($event)">
+                                </div>
+                                <div class="scan-ok-badge" aria-label="scan success"></div>
+                                <div class="photo-card" :class="{ 'no-frame': isMissingImage(latestItem.imageUrl) }">
+                                    <img :src="buildImageUrl(latestItem.imageUrl)"
+                                        :class="{ 'is-fallback': isMissingImage(latestItem.imageUrl) }" alt="รูปสแกน"
+                                        @error="setFallbackImage($event)">
+                                </div>
                             </div>
-                            <div class="meta-item">
-                                <div class="meta-label"><i class="bi bi-person-fill ui-icon icon-name"></i></div>
-                                <div class="meta-value">{{ normalizeName(latestItem.name) || '-' }}</div>
-                            </div>
-                            <div class="meta-item">
-                                <div class="meta-label"><i class="bi bi-clock-fill ui-icon icon-time"></i></div>
-                                <div class="meta-value">{{ formatTime(latestItem.timeStamp) }}</div>
-                            </div>
-                        </div>
-                    </template>
 
-                    <template v-else>
-                        <div class="photo-wrap waiting-wrap">
-                            <div class="photo-card waiting-card">
-                                <img src="SatitCMU.png" alt="โลโก้โรงเรียน">
+                            <div class="meta-grid">
+                                <div class="meta-item">
+                                    <div class="meta-label"><i class="bi bi-person-vcard-fill ui-icon icon-id"></i>
+                                    </div>
+                                    <div class="meta-value">{{ displayUserId(latestItem) }}</div>
+                                </div>
+                                <div class="meta-item">
+                                    <div class="meta-label"><i class="bi bi-person-fill ui-icon icon-name"></i></div>
+                                    <div class="meta-value">{{ normalizeName(latestItem.name) || '-' }}</div>
+                                </div>
+                                <div class="meta-item">
+                                    <div class="meta-label"><i class="bi bi-clock-fill ui-icon icon-time"></i></div>
+                                    <div class="meta-value">{{ formatTime(latestItem.timeStamp) }}</div>
+                                </div>
                             </div>
-                            <div class="scan-ok-badge" aria-hidden="true"></div>
-                            <div class="photo-card waiting-card">
-                                <img src="SatitCMU.png" alt="โลโก้โรงเรียน">
+                        </template>
+
+                        <template v-else>
+                            <div class="photo-wrap waiting-wrap">
+                                <div class="photo-card waiting-card">
+                                    <img src="SatitCMU.png" alt="โลโก้โรงเรียน">
+                                </div>
+                                <div class="scan-ok-badge" aria-hidden="true"></div>
+                                <div class="photo-card waiting-card">
+                                    <img src="SatitCMU.png" alt="โลโก้โรงเรียน">
+                                </div>
                             </div>
-                        </div>
-                        <div class="empty-state">รอข้อมูลจากเครื่องสแกน...</div>
-                    </template>
+                            <div class="empty-state">รอข้อมูลจากเครื่องสแกน...</div>
+                        </template>
+
+                    </div>
 
                     <div class="clock-bar">{{ nowDisplay }}</div>
                 </div>
@@ -522,13 +563,12 @@
                                     @error="setFallbackImage($event)">
                             </div>
                             <div class="mini-text">
-                                <div class="mini-id"><i class="bi bi-person-vcard-fill mini-icon icon-id"></i>{{
+                                <div class="mini-id" v-if="displayUserId(item) !== '-'"><i
+                                        class="bi bi-person-vcard-fill mini-icon icon-id"></i>{{
                                     displayUserId(item) }}</div>
                                 <div class="mini-name"><i class="bi bi-person-fill mini-icon icon-name"></i>
                                     <span class="mini-name-text">
-                                        <span>{{ splitName(item.name).first }}</span>
-                                        <span class="mini-lastname" v-if="splitName(item.name).last">{{
-                                            splitName(item.name).last }}</span>
+                                        {{ normalizeName(item.name) || '-' }}
                                     </span>
                                 </div>
                                 <div class="mini-time"><i class="bi bi-clock-fill mini-icon icon-time"></i>{{
