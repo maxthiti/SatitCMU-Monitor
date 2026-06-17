@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="th">
+<!-- ทดสอบ http-server --proxy http://localhost -->
 
 <head>
     <meta charset="UTF-8">
@@ -14,8 +15,8 @@
         :root {
             --blue-900: #2a478f;
             --blue-700: #4f6480;
-            --yellow-500: #d83a3a;
-            --yellow-300: #ffb3b3;
+            --yellow-500: #1e5fd0;
+            --yellow-300: #b6d2ff;
             --white: #ffffff;
             --gray-100: #f3f7fb;
             --gray-600: #5f6c7b;
@@ -24,8 +25,8 @@
 
         body {
             background:
-                radial-gradient(circle at 92% 96%, rgba(216, 58, 58, 0.18) 0%, rgba(216, 58, 58, 0) 42%),
-                linear-gradient(145deg, #ffffff 0%, #f4f4f4 58%, #eed6d6 100%);
+                radial-gradient(circle at 92% 96%, rgba(30, 95, 208, 0.18) 0%, rgba(30, 95, 208, 0) 42%),
+                linear-gradient(145deg, #ffffff 0%, #f4f8ff 58%, #dce9ff 100%);
             font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
             color: var(--text-main);
             min-height: 100vh;
@@ -41,7 +42,7 @@
         }
 
         .top-bar {
-            background: linear-gradient(135deg, #b71c1c 0%, #e53935 72%, #ffffff 100%);
+            background: linear-gradient(135deg, #0b3d91 0%, #1e5fd0 72%, #ffffff 100%);
             color: var(--white);
             padding: 14px 18px;
             font-weight: 700;
@@ -79,7 +80,7 @@
         }
 
         .panel-head {
-            background: linear-gradient(120deg, #b71c1c 0%, #e53935 100%);
+            background: linear-gradient(120deg, #0b3d91 0%, #1e5fd0 100%);
             color: var(--white);
             border-radius: 10px;
             padding: 10px 14px;
@@ -221,7 +222,7 @@
 
         .clock-bar {
             background: linear-gradient(90deg, var(--yellow-500), #ffffff);
-            color: #7a1010;
+            color: #0a2f66;
             border-radius: 10px;
             padding: 20px;
             text-align: center;
@@ -447,7 +448,7 @@
         <div class="dashboard-shell">
             <div class="top-bar d-flex flex-wrap justify-content-between align-items-center gap-2">
                 <div class="school-brand">
-                    <img src="rpg15-Logo.png" alt="RPG15 Logo" class="school-logo">
+                    <img src="SatitCMU.png" alt="RPG15 Logo" class="school-logo">
                     <div class="school-title">โรงเรียนราชประชานุเคราะห์ 15 จังหวัดเชียงราย</div>
                 </div>
             </div>
@@ -493,11 +494,11 @@
                     <template v-else>
                         <div class="photo-wrap waiting-wrap">
                             <div class="photo-card waiting-card">
-                                <img src="rpg15-Logo.png" alt="โลโก้โรงเรียน">
+                                <img src="SatitCMU.png" alt="โลโก้โรงเรียน">
                             </div>
                             <div class="scan-ok-badge" aria-hidden="true"></div>
                             <div class="photo-card waiting-card">
-                                <img src="rpg15-Logo.png" alt="โลโก้โรงเรียน">
+                                <img src="SatitCMU.png" alt="โลโก้โรงเรียน">
                             </div>
                         </div>
                         <div class="empty-state">รอข้อมูลจากเครื่องสแกน...</div>
@@ -544,7 +545,7 @@
     <script>
         const { createApp } = Vue;
         const API_BASE = 'https://rpg15.zoftdd.com/ckk_api/';
-        const FALLBACK_IMAGE = 'rpg15-Logo.png';
+        const FALLBACK_IMAGE = 'SatitCMU.png';
         const notificationAudio = new Audio('notify.mp3');
 
         createApp({
