@@ -1,6 +1,7 @@
 @echo off
 setlocal
 
+@REM เปลี่ยนชื่อ
 set "STARTUP=%APPDATA%\Microsoft\Windows\Start Menu\Programs\Startup"
 set "TARGET=%STARTUP%\start-monitor.vbs"
 set "PROJECT_DIR=%~dp0"

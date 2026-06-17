@@ -39,14 +39,33 @@ fullscreen_with_f11() {
   ) >/dev/null 2>&1 &
 }
 
-if command -v firefox >/dev/null 2>&1; then
-  nohup firefox --new-window "$URL" >/dev/null 2>&1 &
-  fullscreen_with_f11
-elif command -v google-chrome >/dev/null 2>&1; then
+# if command -v firefox >/dev/null 2>&1; then
+#   nohup firefox --new-window "$URL" >/dev/null 2>&1 &
+#   fullscreen_with_f11
+# elif command -v google-chrome >/dev/null 2>&1; then
+#   nohup google-chrome --new-window --start-fullscreen "$URL" >/dev/null 2>&1 &
+#   fullscreen_with_f11
+# elif command -v google-chrome-stable >/dev/null 2>&1; then
+#   nohup google-chrome-stable --new-window --start-fullscreen "$URL" >/dev/null 2>&1 &
+#   fullscreen_with_f11
+# elif command -v chromium-browser >/dev/null 2>&1; then
+#   nohup chromium-browser --new-window --start-fullscreen "$URL" >/dev/null 2>&1 &
+#   fullscreen_with_f11
+# elif command -v chromium >/dev/null 2>&1; then
+#   nohup chromium --new-window --start-fullscreen "$URL" >/dev/null 2>&1 &
+#   fullscreen_with_f11
+# else
+#   xdg-open "$URL" >/dev/null 2>&1 || true
+# fi
+
+if command -v google-chrome >/dev/null 2>&1; then
   nohup google-chrome --new-window --start-fullscreen "$URL" >/dev/null 2>&1 &
   fullscreen_with_f11
 elif command -v google-chrome-stable >/dev/null 2>&1; then
   nohup google-chrome-stable --new-window --start-fullscreen "$URL" >/dev/null 2>&1 &
+  fullscreen_with_f11
+elif command -v firefox >/dev/null 2>&1; then
+  nohup firefox --new-window "$URL" >/dev/null 2>&1 &
   fullscreen_with_f11
 elif command -v chromium-browser >/dev/null 2>&1; then
   nohup chromium-browser --new-window --start-fullscreen "$URL" >/dev/null 2>&1 &
