@@ -3,19 +3,19 @@ setlocal
 
 set "STARTUP=%APPDATA%\Microsoft\Windows\Start Menu\Programs\Startup"
 
-if exist "%STARTUP%\start-rpg15.vbs" (
-  del /f /q "%STARTUP%\start-rpg15.vbs"
-  echo Removed: %STARTUP%\start-rpg15.vbs
+if exist "%STARTUP%\start-monitor.vbs" (
+  del /f /q "%STARTUP%\start-monitor.vbs"
+  echo Removed: %STARTUP%\start-monitor.vbs
 ) else (
-  echo Not found: start-rpg15.vbs ^(already uninstalled^)
+  echo Not found: start-monitor.vbs ^(already uninstalled^)
 )
 
-if exist "%STARTUP%\start-rpg15.bat" (
-  del /f /q "%STARTUP%\start-rpg15.bat"
-  echo Removed: %STARTUP%\start-rpg15.bat
+if exist "%STARTUP%\start.bat" (
+  del /f /q "%STARTUP%\start.bat"
+  echo Removed: %STARTUP%\start.bat
 )
 
-echo RPG15 auto-start has been removed.
+echo Monitor auto-start has been removed.
 pause
 
 endlocal

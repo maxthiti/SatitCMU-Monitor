@@ -7,14 +7,14 @@ Set fso = CreateObject("Scripting.FileSystemObject")
 ' เปลี่ยนเป็นที่อยู่ของโปรเจคต์
 projectDir = fso.GetParentFolderName(WScript.ScriptFullName)
 If Not fso.FileExists(projectDir & "\index.html") Then
-  projectDir = "C:\Users\Computer01\Thitipong\RPG15-School\RPG15"
+  projectDir = "C:\Users\Computer01\Thitipong\Satitcmu-School\SatitCMU-Monitor\"
 End If
 
 checkCode = shell.Run("cmd /c where http-server >nul 2>&1", 0, True)
 If checkCode <> 0 Then
   MsgBox "Could not find http-server command." & vbCrLf & _
          "Install it once with: npm install -g http-server", _
-         vbCritical, "RPG15 Startup"
+         vbCritical, "Monitor Startup"
   WScript.Quit 1
 End If
 

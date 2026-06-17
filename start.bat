@@ -4,7 +4,7 @@ setlocal
 @REM เปลี่ยนเป็นที่อยู่ของโปรเจคต์
 set "PROJECT_DIR=%~dp0"
 if not exist "%PROJECT_DIR%index.html" (
-  set "PROJECT_DIR=C:\Users\Computer01\Thitipong\RPG15-School\RPG15\"
+  set "PROJECT_DIR=C:\Users\Computer01\Thitipong\Satitcmu-School\SatitCMU-Monitor\"
 )
 
 cd /d "%PROJECT_DIR%"
@@ -17,7 +17,7 @@ if errorlevel 1 (
   exit /b 1
 )
 
-start "RPG15 Server" cmd /k "cd /d ""%PROJECT_DIR%"" && http-server --proxy http://localhost -p 8080"
+start "Monitor Server" cmd /k "cd /d ""%PROJECT_DIR%"" && http-server --proxy http://localhost -p 8080"
 timeout /t 2 /nobreak >nul
 if exist "%ProgramFiles%\Google\Chrome\Application\chrome.exe" (
   start "" "%ProgramFiles%\Google\Chrome\Application\chrome.exe" --new-window "http://localhost:8080/?sn=202604150001"

@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-AUTOSTART_FILE="$HOME/.config/autostart/rpg15-autostart.desktop"
-LAUNCHER_FILE="$HOME/.local/bin/rpg15-autostart.sh"
+AUTOSTART_FILE="$HOME/.config/autostart/monitor-autostart.desktop"
+LAUNCHER_FILE="$HOME/.local/bin/monitor-autostart.sh"
 
 if [[ -f "$AUTOSTART_FILE" ]]; then
   rm -f "$AUTOSTART_FILE"
@@ -18,4 +18,4 @@ else
   echo "Not found: $LAUNCHER_FILE"
 fi
 
-echo "RPG15 Linux autostart removed."
+echo "Monitor Linux autostart removed."
