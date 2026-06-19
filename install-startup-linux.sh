@@ -51,7 +51,7 @@ log "Installed Linux autostart: $DESKTOP_FILE"
 log "Launcher: $LAUNCHER"
 log "Done"
 # ติดตั้ง sudo apt install -y nodejs npm หรือ sudo dnf install -y nodejs npm
-# ติดตั้ง npm install -g http-server
+# ติดตั้ง sudo npm install -g http-server
 # ไปที่อยู่ของไฟล์ chmod +x install-startup-linux.sh start-silent.sh ./install-startup-linux.sh
 # cat ~/.config/autostart/monitor-autostart.desktop
 # cat ~/.local/bin/monitor-autostart.sh
