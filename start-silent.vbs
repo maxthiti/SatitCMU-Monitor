@@ -22,7 +22,7 @@ serverCmd = "cmd /c cd /d """ & projectDir & """ && http-server --proxy http://l
 shell.Run serverCmd, 0, False
 
 WScript.Sleep 5000
-url = "http://localhost:8080/?sn=202604150001"
+url = "http://localhost:8080/?sn=202604150030"
 browserCmd = BuildFullscreenBrowserCommand(url, shell.ExpandEnvironmentStrings("%ProgramFiles%"), shell.ExpandEnvironmentStrings("%ProgramFiles(x86)%"), shell.ExpandEnvironmentStrings("%LocalAppData%"), fso)
 
 If browserCmd <> "" Then

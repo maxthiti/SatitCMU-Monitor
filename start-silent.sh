@@ -2,7 +2,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="$SCRIPT_DIR"
-URL="http://localhost:8080/?sn=202604150056"
+URL="http://localhost:8080/?sn=202604150030"
 
 if [[ ! -f "$PROJECT_DIR/index.html" ]]; then
   exit 1
