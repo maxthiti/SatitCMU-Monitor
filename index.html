@@ -127,7 +127,6 @@
             flex-shrink: 0;
         }
 
-        /* 1. แก้ไขวงสีแดง: ปรับช่องว่างรูปคู่กลางให้ห่างขึ้นเป็น 24px และคุมขนาดความสูงไม่ให้ล้นทับข้อความ */
         .photo-wrap {
             display: flex;
             gap: 24px;
@@ -165,7 +164,6 @@
             line-height: 1;
         }
 
-        /* 1. แก้ไขวงสีแดง: บังคับรักษาสัดส่วนแนวตั้งทรงยาว 3/4 และห้ามสูงเกินพื้นที่ที่เหลืออยู่เด็ดขาด */
         .photo-card {
             overflow: hidden;
             aspect-ratio: 3 / 4;
@@ -185,7 +183,6 @@
             display: block;
         }
 
-        /* แก้ไขพื้นที่ข้อมูลด้านล่างไม่ให้ถูกเบียดบัง */
         .meta-grid {
             display: grid;
             grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -230,7 +227,6 @@
             flex-shrink: 0;
         }
 
-        /* 2. แก้ไขวงสีเขียว: จัดการพาเนลขวาให้พอดีกับหน้าจอ ไม่ล้นและเฉลี่ยแชร์พื้นที่เท่ากัน */
         .list-panel {
             padding: 16px;
             height: 100%;
@@ -254,8 +250,8 @@
 
         .mini-card-body {
             display: grid;
-            grid-template-columns: clamp(58px, 5.5vw, 92px) clamp(58px, 5.5vw, 92px) minmax(0, 1fr);
-            gap: 12px;
+            grid-template-columns: clamp(58px, 5.5vw, 92px) minmax(0, 1fr);
+            gap: 24px;
             padding: 6px 10px;
             align-items: center;
             width: 100%;
@@ -267,9 +263,9 @@
             overflow: hidden;
             background: #dbeeff;
             border: 2px solid #9fc3ec;
-            width: 100%;
-            height: auto;
-            aspect-ratio: 3 / 4;
+            width: 100px;
+            height: 120px;
+            flex-shrink: 0;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -367,7 +363,7 @@
 
         @media (max-width: 1200px) {
             .mini-card-body {
-                grid-template-columns: 54px 54px minmax(0, 1fr);
+                grid-template-columns: 54px minmax(0, 1fr);
                 gap: 10px;
                 padding: 6px 8px;
             }
@@ -408,11 +404,11 @@
             }
 
             .mini-card-body {
-                grid-template-columns: 1fr 1fr;
+                grid-template-columns: 60px minmax(0, 1fr);
             }
 
             .mini-text {
-                grid-column: 1 / -1;
+                grid-column: auto;
             }
         }
     </style>
@@ -443,12 +439,12 @@
                                         :class="{ 'is-fallback': isMissingImage(latestItem.picture) }" alt="รูปหลัก"
                                         @error="setFallbackImage($event)">
                                 </div>
-                                <div class="scan-ok-badge" aria-label="scan success"></div>
+                                <!-- <div class="scan-ok-badge" aria-label="scan success"></div>
                                 <div class="photo-card" :class="{ 'no-frame': isMissingImage(latestItem.imageUrl) }">
                                     <img :src="buildImageUrl(latestItem.imageUrl)"
                                         :class="{ 'is-fallback': isMissingImage(latestItem.imageUrl) }" alt="รูปสแกน"
                                         @error="setFallbackImage($event)">
-                                </div>
+                                </div> -->
                             </div>
 
                             <div class="meta-grid">
@@ -495,23 +491,22 @@
                                     :class="{ 'is-fallback': isMissingImage(item.picture) }" alt="รูปหลัก"
                                     @error="setFallbackImage($event)">
                             </div>
-                            <div class="mini-img" :class="{ 'no-frame': isMissingImage(item.imageUrl) }">
+                            <!-- <div class="mini-img" :class="{ 'no-frame': isMissingImage(item.imageUrl) }">
                                 <img :src="buildImageUrl(item.imageUrl)"
                                     :class="{ 'is-fallback': isMissingImage(item.imageUrl) }" alt="รูปสแกน"
                                     @error="setFallbackImage($event)">
-                            </div>
+                            </div> -->
                             <div class="mini-text">
                                 <div class="mini-id" v-if="displayUserId(item) !== '-'"><i
-                                        class="bi bi-person-vcard-fill mini-icon icon-id"></i>{{
-                                    displayUserId(item) }}</div>
+                                        class="bi bi-person-vcard-fill mini-icon icon-id"></i>{{ displayUserId(item) }}
+                                </div>
                                 <div class="mini-name"><i class="bi bi-person-fill mini-icon icon-name"></i>
                                     <span class="mini-name-text">
                                         {{ normalizeName(item.name) || '-' }}
                                     </span>
                                 </div>
                                 <div class="mini-time"><i class="bi bi-clock-fill mini-icon icon-time"></i>{{
-                                    formatTime(item.timeStamp) }}
-                                </div>
+                                    formatTime(item.timeStamp) }}</div>
                             </div>
                         </div>
                     </div>
@@ -525,6 +520,7 @@
         const API_BASE = 'http://10.178.31.13:80/ckk_api/';
         // const API_BASE = 'https://satit-facescan.edu.cmu.ac.th/ckk_api/';
         const FALLBACK_IMAGE = 'SatitCMU.png';
+        const ENABLE_NAME_ANNOUNCEMENT = false;
         const notificationAudio = new Audio('notify.mp3');
 
         createApp({
@@ -671,6 +667,10 @@
                     }
                 },
                 speakName(name) {
+                    if (!ENABLE_NAME_ANNOUNCEMENT) {
+                        return;
+                    }
+
                     if ('speechSynthesis' in window && name) {
                         const message = `${name} มีผู้ปกครองมารับที่ประตู1`;
                         const utter = new SpeechSynthesisUtterance(message);
