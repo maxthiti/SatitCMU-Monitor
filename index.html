@@ -361,6 +361,19 @@
             margin: 2px;
         }
 
+        .blackout-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background-color: #000000;
+            z-index: 99999;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
         @media (max-width: 1200px) {
             .mini-card-body {
                 grid-template-columns: 54px minmax(0, 1fr);
@@ -416,6 +429,9 @@
 
 <body>
     <div id="app" class="container-fluid px-2 px-lg-3">
+
+        <div v-if="isBlackout" class="blackout-overlay"></div>
+
         <div class="dashboard-shell">
             <div class="top-bar d-flex flex-wrap justify-content-between align-items-center gap-2">
                 <div class="school-brand">
@@ -517,8 +533,8 @@
 
     <script>
         const { createApp } = Vue;
-        const API_BASE = 'http://10.178.31.13:80/ckk_api/';
-        // const API_BASE = 'https://satit-facescan.edu.cmu.ac.th/ckk_api/';
+        // const API_BASE = 'http://10.178.31.13:80/ckk_api/';
+        const API_BASE = 'https://satit-facescan.edu.cmu.ac.th/ckk_api/';
         const FALLBACK_IMAGE = 'SatitCMU.png';
         const ENABLE_NAME_ANNOUNCEMENT = false;
         const notificationAudio = new Audio('notify.mp3');
@@ -532,7 +548,8 @@
                     sn: '',
                     nowDisplay: '',
                     timer: null,
-                    reconnectTimer: null
+                    reconnectTimer: null,
+                    isBlackout: false
                 };
             },
             mounted() {
@@ -582,6 +599,21 @@
                         hour12: false
                     });
                     this.nowDisplay = `${date} ${time}`;
+
+                    this.checkSchedule(now);
+                },
+
+                checkSchedule(now) {
+                    const currentMinutes = now.getHours() * 60 + now.getMinutes();
+
+                    const closeTime = 16 * 60 + 30;
+                    const openTime = 7 * 60 + 0;
+
+                    if (currentMinutes >= closeTime && currentMinutes < openTime) {
+                        this.isBlackout = true;
+                    } else {
+                        this.isBlackout = false;
+                    }
                 },
                 parseDateTime(value) {
                     if (!value) {
