@@ -9,6 +9,7 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jsmpeg@0.2.1/jsmpeg.min.js"></script>
 
     <style>
         html,
@@ -176,11 +177,26 @@
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
         }
 
+        .main-stream-card {
+            width: 100%;
+            height: 100%;
+            aspect-ratio: auto;
+            border-radius: 0;
+        }
+
         .photo-card img {
             width: 100%;
             height: 100%;
             object-fit: cover;
             display: block;
+        }
+
+        .stream-canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+            /* object-fit: cover; */
+            background: #000;
         }
 
         .meta-grid {
@@ -435,8 +451,8 @@
         <div class="dashboard-shell">
             <div class="top-bar d-flex flex-wrap justify-content-between align-items-center gap-2">
                 <div class="school-brand">
-                    <img src="SatitCMU.png" alt="SatitCMU Logo" class="school-logo">
-                    <div class="school-title">โรงเรียนสาธิตมหาวิทยาลัยเชียงใหม่ จังหวัดเชียงใหม่</div>
+                    <img src="Seal_of_Wattanothaipayap_School.svg" alt="Wattano Logo" class="school-logo">
+                    <div class="school-title">โรงเรียนวัฒโนทัยพายัพ จังหวัดเชียงใหม่</div>
                 </div>
             </div>
 
@@ -450,9 +466,12 @@
 
                         <template v-if="latestItem">
                             <div class="photo-wrap">
-                                <div class="photo-card" :class="{ 'no-frame': isMissingImage(latestItem.picture) }">
-                                    <img :src="buildImageUrl(latestItem.picture)"
-                                        :class="{ 'is-fallback': isMissingImage(latestItem.picture) }" alt="รูปหลัก"
+                                <div class="photo-card main-stream-card"
+                                    :class="{ 'no-frame': isMainFallback(latestItem) }">
+                                    <canvas v-if="isVideoCanvasMode" ref="mainStreamCanvas"
+                                        class="stream-canvas"></canvas>
+                                    <img v-else :src="mainDisplayImage(latestItem)"
+                                        :class="{ 'is-fallback': isMainFallback(latestItem) }" alt="รูปหลัก"
                                         @error="setFallbackImage($event)">
                                 </div>
                                 <!-- <div class="scan-ok-badge" aria-label="scan success"></div>
@@ -463,7 +482,7 @@
                                 </div> -->
                             </div>
 
-                            <div class="meta-grid">
+                            <!-- <div class="meta-grid">
                                 <div class="meta-item">
                                     <div class="meta-label"><i class="bi bi-person-vcard-fill ui-icon icon-id"></i>
                                     </div>
@@ -477,20 +496,21 @@
                                     <div class="meta-label"><i class="bi bi-clock-fill ui-icon icon-time"></i></div>
                                     <div class="meta-value">{{ formatTime(latestItem.timeStamp) }}</div>
                                 </div>
-                            </div>
+                            </div> -->
                         </template>
 
                         <template v-else>
                             <div class="photo-wrap waiting-wrap">
-                                <div class="photo-card waiting-card">
-                                    <img src="SatitCMU.png" alt="โลโก้โรงเรียน">
-                                </div>
-                                <div class="scan-ok-badge" aria-hidden="true"></div>
-                                <div class="photo-card waiting-card">
-                                    <img src="SatitCMU.png" alt="โลโก้โรงเรียน">
+                                <div class="photo-card waiting-card main-stream-card"
+                                    :class="{ 'no-frame': isMainFallback(null) }">
+                                    <canvas v-if="isVideoCanvasMode" ref="mainStreamCanvas"
+                                        class="stream-canvas"></canvas>
+                                    <img v-else :src="mainDisplayImage(null)"
+                                        :class="{ 'is-fallback': isMainFallback(null) }" alt="ภาพจากกล้อง"
+                                        @error="setFallbackImage($event)">
                                 </div>
                             </div>
-                            <div class="empty-state">รอข้อมูลจากเครื่องสแกน...</div>
+                            <!-- <div class="empty-state">รอข้อมูลจากเครื่องสแกน...</div> -->
                         </template>
 
                     </div>
@@ -534,10 +554,20 @@
     <script>
         const { createApp } = Vue;
         // const API_BASE = 'http://10.178.31.13:80/ckk_api/';
-        const API_BASE = 'https://satit-facescan.edu.cmu.ac.th/ckk_api/';
-        const FALLBACK_IMAGE = 'SatitCMU.png';
+        const API_BASE = 'https://wattano.zoftdd.com/ckk_api/';
+        // const STREAM_DATA_WS_URL = 'ws://192.168.123.22:9901/';
+        // const STREAM_META_WS_URL = 'ws://192.168.123.22:9902/';
+        // const CAMERA_HOST_OVERRIDE = new URLSearchParams(window.location.search).get('cameraHost');
+        // const PAGE_HOST = window.location.hostname || 'localhost';
+        const DEFAULT_CAMERA_HOST = '192.168.123.22';
+        // const CAMERA_HOST = CAMERA_HOST_OVERRIDE || (PAGE_HOST === 'localhost' ? '127.0.0.1' : DEFAULT_CAMERA_HOST);
+        const STREAM_DATA_WS_URL = `ws://${DEFAULT_CAMERA_HOST}:9901/`;
+        const STREAM_META_WS_URL = `ws://${DEFAULT_CAMERA_HOST}:9902/`;
+        const STREAM_WS_PROTOCOL = 'artosyn-priv';
+        const FALLBACK_IMAGE = 'Seal_of_Wattanothaipayap_School.svg';
         const ENABLE_NAME_ANNOUNCEMENT = false;
-        const notificationAudio = new Audio('notify.mp3');
+        const BLACKOUT_MODE_ENABLED = false;
+        // const notificationAudio = new Audio('notify.mp3');
 
         createApp({
             data() {
@@ -549,7 +579,26 @@
                     nowDisplay: '',
                     timer: null,
                     reconnectTimer: null,
-                    isBlackout: false
+                    isBlackout: false,
+                    streamSocket: null,
+                    streamMetaSocket: null,
+                    streamUrl: '',
+                    streamObjectUrl: '',
+                    streamReconnectTimer: null,
+                    streamMetaReconnectTimer: null,
+                    isUnmounting: false,
+                    streamPlayer: null,
+                    streamMessageCount: 0,
+                    streamLastMessageAt: '',
+                    streamNoDataTimer: null,
+                    isMpegTsMode: false,
+                    isH264Mode: false,
+                    h264Decoder: null,
+                    h264Codec: 'avc1.42E01E',
+                    h264Fps: 25,
+                    h264TimestampUs: 0,
+                    h264NeedKeyFrame: true,
+                    streamCanvasCtx: null
                 };
             },
             mounted() {
@@ -559,8 +608,12 @@
                 this.updateNow();
                 this.timer = setInterval(this.updateNow, 1000);
                 this.connectSSE();
+                this.connectCameraMetaStream();
+                this.connectCameraStream();
             },
             beforeUnmount() {
+                this.isUnmounting = true;
+
                 if (this.timer) {
                     clearInterval(this.timer);
                 }
@@ -571,6 +624,37 @@
 
                 if (this.eventSource) {
                     this.eventSource.close();
+                }
+
+                if (this.streamReconnectTimer) {
+                    clearTimeout(this.streamReconnectTimer);
+                }
+
+                if (this.streamMetaReconnectTimer) {
+                    clearTimeout(this.streamMetaReconnectTimer);
+                }
+
+                if (this.streamNoDataTimer) {
+                    clearTimeout(this.streamNoDataTimer);
+                }
+
+                if (this.streamSocket) {
+                    this.streamSocket.close();
+                }
+
+                if (this.streamMetaSocket) {
+                    this.streamMetaSocket.close();
+                }
+
+                if (this.streamPlayer && typeof this.streamPlayer.destroy === 'function') {
+                    this.streamPlayer.destroy();
+                }
+
+                this.destroyH264Decoder();
+
+                if (this.streamObjectUrl) {
+                    URL.revokeObjectURL(this.streamObjectUrl);
+                    this.streamObjectUrl = '';
                 }
             },
             computed: {
@@ -585,6 +669,9 @@
                 },
                 sidebarItems() {
                     return this.latestSix.slice(1, 6);
+                },
+                isVideoCanvasMode() {
+                    return this.isMpegTsMode || this.isH264Mode;
                 }
             },
             methods: {
@@ -604,9 +691,14 @@
                 },
 
                 checkSchedule(now) {
+                    if (!BLACKOUT_MODE_ENABLED) {
+                        this.isBlackout = false;
+                        return;
+                    }
+
                     const currentMinutes = now.getHours() * 60 + now.getMinutes();
 
-                    const closeTime = 16 * 60 + 30;
+                    const closeTime = 19 * 60 + 30;
                     const openTime = 7 * 60 + 0;
 
                     if (currentMinutes >= closeTime && currentMinutes < openTime) {
@@ -690,6 +782,28 @@
                 isMissingImage(path) {
                     return !path;
                 },
+                mainDisplayImage(item) {
+                    if (this.streamUrl) {
+                        return this.streamUrl;
+                    }
+
+                    if (!item) {
+                        return FALLBACK_IMAGE;
+                    }
+
+                    return this.buildImageUrl(item.picture);
+                },
+                isMainFallback(item) {
+                    if (this.streamUrl) {
+                        return false;
+                    }
+
+                    if (!item) {
+                        return true;
+                    }
+
+                    return this.isMissingImage(item.picture);
+                },
                 setFallbackImage(event) {
                     event.target.src = FALLBACK_IMAGE;
                     event.target.classList.add('is-fallback');
@@ -731,6 +845,456 @@
                     this.speakName(payload.name);
 
                     this.records = this.sortedRecords.slice(0, 6);
+                },
+                setStreamImage(blob) {
+                    const objectUrl = URL.createObjectURL(blob);
+
+                    if (this.streamObjectUrl) {
+                        URL.revokeObjectURL(this.streamObjectUrl);
+                    }
+
+                    this.streamObjectUrl = objectUrl;
+                    this.streamUrl = objectUrl;
+                },
+                connectCameraMetaStream() {
+                    if (this.isUnmounting) {
+                        return;
+                    }
+
+                    if (this.streamMetaSocket) {
+                        this.streamMetaSocket.close();
+                    }
+
+                    const socket = new WebSocket(STREAM_META_WS_URL, STREAM_WS_PROTOCOL);
+                    this.streamMetaSocket = socket;
+
+                    socket.onopen = () => {
+                        console.log('Camera metadata stream connected:', STREAM_META_WS_URL);
+                    };
+
+                    socket.onmessage = (event) => {
+                        if (typeof event.data === 'string') {
+                            this.maybeParseJsonImage(event.data);
+                        }
+                    };
+
+                    socket.onerror = (error) => {
+                        console.warn('Camera metadata stream error', error);
+                    };
+
+                    socket.onclose = () => {
+                        if (this.isUnmounting) {
+                            return;
+                        }
+
+                        if (this.streamMetaReconnectTimer) {
+                            clearTimeout(this.streamMetaReconnectTimer);
+                        }
+
+                        this.streamMetaReconnectTimer = setTimeout(() => {
+                            this.connectCameraMetaStream();
+                        }, 3000);
+                    };
+                },
+                scheduleNoDataProbe(socket) {
+                    if (this.streamNoDataTimer) {
+                        clearTimeout(this.streamNoDataTimer);
+                    }
+
+                    const snapshot = this.streamMessageCount;
+                    this.streamNoDataTimer = setTimeout(() => {
+                        if (this.isUnmounting || this.isMpegTsMode || this.isH264Mode) {
+                            return;
+                        }
+
+                        if (socket !== this.streamSocket || socket.readyState !== WebSocket.OPEN) {
+                            return;
+                        }
+
+                        if (this.streamMessageCount === snapshot) {
+                            console.warn('Connected but no stream payload yet. Waiting for camera binary frames...');
+                            this.scheduleNoDataProbe(socket);
+                        }
+                    }, 4000);
+                },
+                detectImageMime(bytes) {
+                    if (bytes.length >= 2 && bytes[0] === 0xff && bytes[1] === 0xd8) {
+                        return 'image/jpeg';
+                    }
+
+                    if (
+                        bytes.length >= 8 &&
+                        bytes[0] === 0x89 &&
+                        bytes[1] === 0x50 &&
+                        bytes[2] === 0x4e &&
+                        bytes[3] === 0x47
+                    ) {
+                        return 'image/png';
+                    }
+
+                    return '';
+                },
+                destroyH264Decoder() {
+                    if (this.h264Decoder) {
+                        try {
+                            this.h264Decoder.close();
+                        } catch (error) {
+                            console.warn('Failed to close H264 decoder:', error);
+                        }
+                    }
+
+                    this.h264Decoder = null;
+                    this.streamCanvasCtx = null;
+                },
+                switchToH264Mode(meta = null) {
+                    if (this.isUnmounting) {
+                        return;
+                    }
+
+                    this.isH264Mode = true;
+                    this.isMpegTsMode = false;
+
+                    if (this.streamPlayer && typeof this.streamPlayer.destroy === 'function') {
+                        this.streamPlayer.destroy();
+                        this.streamPlayer = null;
+                    }
+
+                    if (meta && Number.isFinite(Number(meta.fps)) && Number(meta.fps) > 0) {
+                        this.h264Fps = Number(meta.fps);
+                    }
+
+                    const metaWidth = Number(meta && meta.width);
+                    const metaHeight = Number(meta && meta.height);
+
+                    this.h264TimestampUs = 0;
+                    this.h264NeedKeyFrame = true;
+                    this.h264Codec = 'avc1.42E01E';
+
+                    this.$nextTick(() => {
+                        const canvas = this.$refs.mainStreamCanvas;
+                        if (!canvas) {
+                            return;
+                        }
+
+                        if (Number.isFinite(metaWidth) && Number.isFinite(metaHeight) && metaWidth > 0 && metaHeight > 0) {
+                            canvas.width = metaWidth;
+                            canvas.height = metaHeight;
+                        }
+
+                        this.streamCanvasCtx = canvas.getContext('2d');
+                    });
+                },
+                createH264CodecFromSps(spsNal) {
+                    if (!spsNal || spsNal.length < 4) return null;
+                    const toHex = (value) => value.toString(16).padStart(2, '0');
+                    const profileIdc = spsNal[1];
+
+                    // ถ้าเจอ High Profile (0x64 = 100) ให้ใช้ avc1.42E01E เซฟสุด
+                    if (profileIdc === 0x64) {
+                        return 'avc1.42E01E';
+                    }
+
+                    return `avc1.${toHex(profileIdc)}${toHex(spsNal[2])}${toHex(spsNal[3])}`;
+                },
+                getAnnexBNalUnits(bytes) {
+                    const units = [];
+                    const starts = [];
+
+                    for (let i = 0; i < bytes.length - 3; i += 1) {
+                        if (bytes[i] === 0x00 && bytes[i + 1] === 0x00 && bytes[i + 2] === 0x01) {
+                            starts.push({ index: i, prefix: 3 });
+                            i += 2;
+                            continue;
+                        }
+
+                        if (
+                            i < bytes.length - 4 &&
+                            bytes[i] === 0x00 &&
+                            bytes[i + 1] === 0x00 &&
+                            bytes[i + 2] === 0x00 &&
+                            bytes[i + 3] === 0x01
+                        ) {
+                            starts.push({ index: i, prefix: 4 });
+                            i += 3;
+                        }
+                    }
+
+                    for (let i = 0; i < starts.length; i += 1) {
+                        const start = starts[i];
+                        const end = i + 1 < starts.length ? starts[i + 1].index : bytes.length;
+                        const nalStart = start.index + start.prefix;
+
+                        if (nalStart < end) {
+                            units.push(bytes.subarray(nalStart, end));
+                        }
+                    }
+
+                    return units;
+                },
+                ensureH264Decoder(codec) {
+                    if (!('VideoDecoder' in window) || !('EncodedVideoChunk' in window)) {
+                        console.error('WebCodecs is not supported in this browser.');
+                        return false;
+                    }
+
+                    if (!this.h264Decoder) {
+                        this.h264Decoder = new VideoDecoder({
+                            output: (frame) => {
+                                const canvas = this.$refs.mainStreamCanvas;
+                                if (!canvas) {
+                                    frame.close();
+                                    return;
+                                }
+
+                                if (!this.streamCanvasCtx) {
+                                    this.streamCanvasCtx = canvas.getContext('2d');
+                                }
+
+                                if (!this.streamCanvasCtx) {
+                                    frame.close();
+                                    return;
+                                }
+
+                                if (canvas.width !== frame.displayWidth || canvas.height !== frame.displayHeight) {
+                                    canvas.width = frame.displayWidth;
+                                    canvas.height = frame.displayHeight;
+                                }
+
+                                this.streamCanvasCtx.drawImage(frame, 0, 0, canvas.width, canvas.height);
+                                frame.close();
+                            },
+                            error: (error) => {
+                                console.error('H264 decoder error:', error);
+                                this.h264NeedKeyFrame = true;
+                            }
+                        });
+                    }
+
+                    if (this.h264Decoder.state !== 'configured' || this.h264Codec !== codec) {
+                        this.h264Codec = codec;
+                        this.h264Decoder.configure({
+                            codec,
+                            optimizeForLatency: true,
+                            hardwareAcceleration: 'prefer-hardware'
+                        });
+                        console.log('H264 decoder configured with codec:', codec);
+                    }
+
+                    return true;
+                },
+                handleH264Chunk(bytes) {
+                    const nalUnits = this.getAnnexBNalUnits(bytes);
+                    if (!nalUnits.length) {
+                        return;
+                    }
+
+                    const nalTypes = nalUnits.map((unit) => unit[0] & 0x1f);
+                    const hasSps = nalTypes.includes(7);
+                    const hasPps = nalTypes.includes(8);
+                    const hasIdr = nalTypes.includes(5);
+
+                    if (hasSps) {
+                        // const sps = nalUnits.find((unit) => (unit[0] & 0x1f) === 7);
+                        // const maybeCodec = this.createH264CodecFromSps(sps);
+                        // if (maybeCodec) {
+                        //     this.h264Codec = maybeCodec;
+                        // }
+                        this.h264Codec = 'avc1.42E01E';
+                    }
+
+                    if (!this.ensureH264Decoder(this.h264Codec)) {
+                        return;
+                    }
+
+                    const isKey = hasIdr || (hasSps && hasPps);
+                    if (this.h264NeedKeyFrame && !isKey) {
+                        return;
+                    }
+
+                    if (isKey) {
+                        this.h264NeedKeyFrame = false;
+                    }
+
+                    const timestamp = this.h264TimestampUs;
+                    const frameIntervalUs = Math.max(1, Math.round(1000000 / Math.max(1, this.h264Fps)));
+                    this.h264TimestampUs += frameIntervalUs;
+
+                    try {
+                        const chunk = new EncodedVideoChunk({
+                            type: isKey ? 'key' : 'delta',
+                            timestamp,
+                            data: bytes
+                        });
+                        this.h264Decoder.decode(chunk);
+                    } catch (error) {
+                        console.warn('Failed to decode H264 chunk:', error);
+                        this.h264NeedKeyFrame = true;
+                    }
+                },
+                maybeParseJsonImage(textPayload) {
+                    try {
+                        const payload = JSON.parse(textPayload);
+
+                        const streamType = String(payload.datatype || payload.dataType || '').toLowerCase();
+                        if (streamType === 'h264') {
+                            console.log('H264 stream metadata:', payload);
+                            this.switchToH264Mode(payload);
+                            return true;
+                        }
+
+                        const imageFields = ['image', 'frame', 'data', 'base64'];
+
+                        for (const field of imageFields) {
+                            const value = payload[field];
+                            if (typeof value !== 'string' || !value) {
+                                continue;
+                            }
+
+                            if (value.startsWith('data:image/')) {
+                                this.streamUrl = value;
+                                return true;
+                            }
+
+                            if (/^[A-Za-z0-9+/=]+$/.test(value)) {
+                                this.streamUrl = `data:image/jpeg;base64,${value}`;
+                                return true;
+                            }
+                        }
+                    } catch (error) {
+                        return false;
+                    }
+
+                    return false;
+                },
+                switchToMpegTsMode() {
+                    if (this.isMpegTsMode || this.isUnmounting) {
+                        return;
+                    }
+
+                    this.isMpegTsMode = true;
+                    this.isH264Mode = false;
+                    this.destroyH264Decoder();
+
+                    if (this.streamSocket) {
+                        this.streamSocket.onclose = null;
+                        this.streamSocket.close();
+                        this.streamSocket = null;
+                    }
+
+                    this.$nextTick(() => {
+                        if (this.isUnmounting || !window.JSMpeg) {
+                            return;
+                        }
+
+                        const canvas = this.$refs.mainStreamCanvas;
+                        if (!canvas) {
+                            return;
+                        }
+
+                        if (this.streamPlayer && typeof this.streamPlayer.destroy === 'function') {
+                            this.streamPlayer.destroy();
+                        }
+
+                        console.warn('Switching to MPEG-TS stream mode.');
+                        this.streamPlayer = new window.JSMpeg.Player(STREAM_DATA_WS_URL, {
+                            canvas,
+                            autoplay: true,
+                            audio: false,
+                            pauseWhenHidden: false,
+                            disableGl: true
+                        });
+                    });
+                },
+                handleStreamPayload(data) {
+                    if (!data) {
+                        return;
+                    }
+
+                    this.streamMessageCount += 1;
+                    this.streamLastMessageAt = new Date().toISOString();
+
+                    if (typeof data === 'string') {
+                        if (data.startsWith('data:image/')) {
+                            this.streamUrl = data;
+                            return;
+                        }
+
+                        if (this.maybeParseJsonImage(data)) {
+                            return;
+                        }
+
+                        console.debug('Text payload received from stream:', data.slice(0, 180));
+                        return;
+                    }
+
+                    if (data instanceof Blob) {
+                        this.setStreamImage(data);
+                        return;
+                    }
+
+                    if (data instanceof ArrayBuffer) {
+                        const bytes = new Uint8Array(data);
+
+                        if (!this.isH264Mode && !this.isMpegTsMode) {
+                            this.switchToH264Mode();
+                        }
+
+                        if (this.isH264Mode) {
+                            this.handleH264Chunk(bytes);
+                            return;
+                        }
+
+                        const mimeType = this.detectImageMime(bytes);
+
+                        if (mimeType) {
+                            this.setStreamImage(new Blob([bytes], { type: mimeType }));
+                            return;
+                        }
+
+                        if (!this.isMpegTsMode) {
+                            this.switchToMpegTsMode();
+                        }
+                    }
+                },
+                connectCameraStream() {
+                    if (this.isUnmounting) {
+                        return;
+                    }
+
+                    if (this.streamSocket) {
+                        this.streamSocket.close();
+                    }
+
+                    const socket = new WebSocket(STREAM_DATA_WS_URL, STREAM_WS_PROTOCOL);
+                    socket.binaryType = 'arraybuffer';
+                    this.streamSocket = socket;
+
+                    socket.onopen = () => {
+                        console.log('Camera binary stream connected:', STREAM_DATA_WS_URL);
+                        this.scheduleNoDataProbe(socket);
+                    };
+
+                    socket.onmessage = (event) => {
+                        this.handleStreamPayload(event.data);
+                    };
+
+                    socket.onerror = (error) => {
+                        console.warn('Camera stream error', error);
+                    };
+
+                    socket.onclose = () => {
+                        if (this.isUnmounting) {
+                            return;
+                        }
+
+                        if (this.streamReconnectTimer) {
+                            clearTimeout(this.streamReconnectTimer);
+                        }
+
+                        this.streamReconnectTimer = setTimeout(() => {
+                            this.connectCameraStream();
+                        }, 3000);
+                    };
                 },
                 connectSSE() {
                     if (!this.sn) {
