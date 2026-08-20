@@ -464,25 +464,24 @@
 
                     <div class="highlight-main">
 
-                        <template v-if="latestItem">
-                            <div class="photo-wrap">
-                                <div class="photo-card main-stream-card"
-                                    :class="{ 'no-frame': isMainFallback(latestItem) }">
-                                    <canvas v-if="isVideoCanvasMode" ref="mainStreamCanvas"
-                                        class="stream-canvas"></canvas>
-                                    <img v-else :src="mainDisplayImage(latestItem)"
-                                        :class="{ 'is-fallback': isMainFallback(latestItem) }" alt="รูปหลัก"
-                                        @error="setFallbackImage($event)">
-                                </div>
-                                <!-- <div class="scan-ok-badge" aria-label="scan success"></div>
+                        <!-- <template v-if="latestItem"> -->
+                        <div class="photo-wrap">
+                            <div class="photo-card main-stream-card"
+                                :class="{ 'no-frame': latestItem && isMainFallback(latestItem) }">
+                                <canvas ref="mainStreamCanvas" class="stream-canvas"></canvas>
+                                <!-- <img v-else :src="mainDisplayImage(latestItem)"
+                                    :class="{ 'is-fallback': isMainFallback(latestItem) }" alt="รูปหลัก"
+                                    @error="setFallbackImage($event)"> -->
+                            </div>
+                            <!-- <div class="scan-ok-badge" aria-label="scan success"></div>
                                 <div class="photo-card" :class="{ 'no-frame': isMissingImage(latestItem.imageUrl) }">
                                     <img :src="buildImageUrl(latestItem.imageUrl)"
                                         :class="{ 'is-fallback': isMissingImage(latestItem.imageUrl) }" alt="รูปสแกน"
                                         @error="setFallbackImage($event)">
                                 </div> -->
-                            </div>
+                        </div>
 
-                            <!-- <div class="meta-grid">
+                        <!-- <div class="meta-grid">
                                 <div class="meta-item">
                                     <div class="meta-label"><i class="bi bi-person-vcard-fill ui-icon icon-id"></i>
                                     </div>
@@ -497,9 +496,9 @@
                                     <div class="meta-value">{{ formatTime(latestItem.timeStamp) }}</div>
                                 </div>
                             </div> -->
-                        </template>
+                        <!-- </template> -->
 
-                        <template v-else>
+                        <!-- <template v-else>
                             <div class="photo-wrap waiting-wrap">
                                 <div class="photo-card waiting-card main-stream-card"
                                     :class="{ 'no-frame': isMainFallback(null) }">
@@ -510,8 +509,8 @@
                                         @error="setFallbackImage($event)">
                                 </div>
                             </div>
-                            <!-- <div class="empty-state">รอข้อมูลจากเครื่องสแกน...</div> -->
-                        </template>
+                            <div class="empty-state">รอข้อมูลจากเครื่องสแกน...</div>
+                        </template> -->
 
                     </div>
 
@@ -555,12 +554,7 @@
         const { createApp } = Vue;
         // const API_BASE = 'http://10.178.31.13:80/ckk_api/';
         const API_BASE = 'https://wattano.zoftdd.com/ckk_api/';
-        // const STREAM_DATA_WS_URL = 'ws://192.168.123.22:9901/';
-        // const STREAM_META_WS_URL = 'ws://192.168.123.22:9902/';
-        // const CAMERA_HOST_OVERRIDE = new URLSearchParams(window.location.search).get('cameraHost');
-        // const PAGE_HOST = window.location.hostname || 'localhost';
         const DEFAULT_CAMERA_HOST = '192.168.123.22';
-        // const CAMERA_HOST = CAMERA_HOST_OVERRIDE || (PAGE_HOST === 'localhost' ? '127.0.0.1' : DEFAULT_CAMERA_HOST);
         const STREAM_DATA_WS_URL = `ws://${DEFAULT_CAMERA_HOST}:9901/`;
         const STREAM_META_WS_URL = `ws://${DEFAULT_CAMERA_HOST}:9902/`;
         const STREAM_WS_PROTOCOL = 'artosyn-priv';
@@ -661,14 +655,14 @@
                 sortedRecords() {
                     return [...this.records].sort((a, b) => this.parseDateTime(b.timeStamp) - this.parseDateTime(a.timeStamp));
                 },
-                latestSix() {
-                    return this.sortedRecords.slice(0, 6);
+                latestFive() {
+                    return this.sortedRecords.slice(0, 5);
                 },
                 latestItem() {
-                    return this.latestSix.length ? this.latestSix[0] : null;
+                    return this.latestFive.length ? this.latestFive[0] : null;
                 },
                 sidebarItems() {
-                    return this.latestSix.slice(1, 6);
+                    return this.latestFive;
                 },
                 isVideoCanvasMode() {
                     return this.isMpegTsMode || this.isH264Mode;
@@ -691,15 +685,15 @@
                 },
 
                 checkSchedule(now) {
-                    if (!BLACKOUT_MODE_ENABLED) {
-                        this.isBlackout = false;
-                        return;
-                    }
+                    // if (!BLACKOUT_MODE_ENABLED) {
+                    //     this.isBlackout = false;
+                    //     return;
+                    // }
 
                     const currentMinutes = now.getHours() * 60 + now.getMinutes();
 
-                    const closeTime = 19 * 60 + 30;
-                    const openTime = 7 * 60 + 0;
+                    const closeTime = 11 * 60 + 20;
+                    const openTime = 11 * 60 + 21;
 
                     if (currentMinutes >= closeTime && currentMinutes < openTime) {
                         this.isBlackout = true;
@@ -976,10 +970,10 @@
                             return;
                         }
 
-                        if (Number.isFinite(metaWidth) && Number.isFinite(metaHeight) && metaWidth > 0 && metaHeight > 0) {
-                            canvas.width = metaWidth;
-                            canvas.height = metaHeight;
-                        }
+                        // if (Number.isFinite(metaWidth) && Number.isFinite(metaHeight) && metaWidth > 0 && metaHeight > 0) {
+                        canvas.width = metaWidth;
+                        canvas.height = metaHeight;
+                        // }
 
                         this.streamCanvasCtx = canvas.getContext('2d');
                     });
@@ -989,7 +983,6 @@
                     const toHex = (value) => value.toString(16).padStart(2, '0');
                     const profileIdc = spsNal[1];
 
-                    // ถ้าเจอ High Profile (0x64 = 100) ให้ใช้ avc1.42E01E เซฟสุด
                     if (profileIdc === 0x64) {
                         return 'avc1.42E01E';
                     }
@@ -1041,7 +1034,28 @@
                         this.h264Decoder = new VideoDecoder({
                             output: (frame) => {
                                 const canvas = this.$refs.mainStreamCanvas;
+
+                                // console.log('H264 FRAME OUTPUT:', {
+                                //     frameWidth: frame.displayWidth,
+                                //     frameHeight: frame.displayHeight,
+                                //     frameCodedWidth: frame.codedWidth,
+                                //     frameCodedHeight: frame.codedHeight,
+                                //     timestamp: frame.timestamp,
+
+                                //     canvasExists: !!canvas,
+                                //     canvasWidth: canvas?.width,
+                                //     canvasHeight: canvas?.height,
+
+                                //     canvasRect: canvas
+                                //         ? {
+                                //             width: canvas.getBoundingClientRect().width,
+                                //             height: canvas.getBoundingClientRect().height
+                                //         }
+                                //         : null
+                                // });
+
                                 if (!canvas) {
+                                    console.error('Canvas not found!');
                                     frame.close();
                                     return;
                                 }
@@ -1051,16 +1065,41 @@
                                 }
 
                                 if (!this.streamCanvasCtx) {
+                                    console.error('Canvas 2D context not found!');
                                     frame.close();
                                     return;
                                 }
 
-                                if (canvas.width !== frame.displayWidth || canvas.height !== frame.displayHeight) {
+                                if (
+                                    canvas.width !== frame.displayWidth ||
+                                    canvas.height !== frame.displayHeight
+                                ) {
                                     canvas.width = frame.displayWidth;
                                     canvas.height = frame.displayHeight;
                                 }
 
-                                this.streamCanvasCtx.drawImage(frame, 0, 0, canvas.width, canvas.height);
+                                this.streamCanvasCtx.drawImage(
+                                    frame,
+                                    0,
+                                    0,
+                                    canvas.width,
+                                    canvas.height
+                                );
+                                // console.log(
+                                //     'Canvas sample:',
+                                //     this.streamCanvasCtx.getImageData(
+                                //         Math.floor(canvas.width / 2),
+                                //         Math.floor(canvas.height / 2),
+                                //         1,
+                                //         1
+                                //     ).data
+                                // );
+
+                                // console.log('Canvas drawn:', {
+                                //     canvasWidth: canvas.width,
+                                //     canvasHeight: canvas.height
+                                // });
+
                                 frame.close();
                             },
                             error: (error) => {
@@ -1075,7 +1114,7 @@
                         this.h264Decoder.configure({
                             codec,
                             optimizeForLatency: true,
-                            hardwareAcceleration: 'prefer-hardware'
+                            hardwareAcceleration: 'prefer-software'
                         });
                         console.log('H264 decoder configured with codec:', codec);
                     }
@@ -1089,6 +1128,14 @@
                     }
 
                     const nalTypes = nalUnits.map((unit) => unit[0] & 0x1f);
+
+                    // console.log(
+                    //     'H264 NAL:',
+                    //     nalTypes,
+                    //     'size:',
+                    //     bytes.length
+                    // );
+
                     const hasSps = nalTypes.includes(7);
                     const hasPps = nalTypes.includes(8);
                     const hasIdr = nalTypes.includes(5);
@@ -1125,7 +1172,22 @@
                             timestamp,
                             data: bytes
                         });
+
+                        // console.log('Before decode:', {
+                        //     state: this.h264Decoder?.state,
+                        //     decodeQueue: this.h264Decoder?.decodeQueueSize,
+                        //     type: chunk.type,
+                        //     timestamp: chunk.timestamp,
+                        //     bytes: bytes.length,
+                        //     nalTypes
+                        // });
+
                         this.h264Decoder.decode(chunk);
+
+                        // console.log('After decode:', {
+                        //     state: this.h264Decoder?.state,
+                        //     decodeQueue: this.h264Decoder?.decodeQueueSize
+                        // });
                     } catch (error) {
                         console.warn('Failed to decode H264 chunk:', error);
                         this.h264NeedKeyFrame = true;
@@ -1235,19 +1297,36 @@
                     if (data instanceof ArrayBuffer) {
                         const bytes = new Uint8Array(data);
 
-                        if (!this.isH264Mode && !this.isMpegTsMode) {
-                            this.switchToH264Mode();
-                        }
+                        const nalUnits = this.getAnnexBNalUnits(bytes);
 
-                        if (this.isH264Mode) {
-                            this.handleH264Chunk(bytes);
-                            return;
+                        if (nalUnits.length) {
+                            const nalTypes = nalUnits.map(unit => unit[0] & 0x1f);
+
+                            const hasSps = nalTypes.includes(7);
+                            const hasPps = nalTypes.includes(8);
+                            const hasIdr = nalTypes.includes(5);
+
+                            if (hasSps || hasPps || hasIdr) {
+                                if (!this.isH264Mode) {
+                                    this.switchToH264Mode();
+                                }
+
+                                this.handleH264Chunk(bytes);
+                                return;
+                            }
+
+                            if (this.isH264Mode) {
+                                this.handleH264Chunk(bytes);
+                                return;
+                            }
                         }
 
                         const mimeType = this.detectImageMime(bytes);
 
                         if (mimeType) {
-                            this.setStreamImage(new Blob([bytes], { type: mimeType }));
+                            this.setStreamImage(
+                                new Blob([bytes], { type: mimeType })
+                            );
                             return;
                         }
 
@@ -1265,12 +1344,23 @@
                         this.streamSocket.close();
                     }
 
-                    const socket = new WebSocket(STREAM_DATA_WS_URL, STREAM_WS_PROTOCOL);
+                    this.h264NeedKeyFrame = true;
+                    this.h264TimestampUs = 0;
+
+                    const socket = new WebSocket(
+                        STREAM_DATA_WS_URL,
+                        STREAM_WS_PROTOCOL
+                    );
+
                     socket.binaryType = 'arraybuffer';
                     this.streamSocket = socket;
 
                     socket.onopen = () => {
-                        console.log('Camera binary stream connected:', STREAM_DATA_WS_URL);
+                        console.log(
+                            'Camera binary stream connected:',
+                            STREAM_DATA_WS_URL
+                        );
+
                         this.scheduleNoDataProbe(socket);
                     };
 
