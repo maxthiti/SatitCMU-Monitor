@@ -63,7 +63,7 @@
         }
 
         .top-bar {
-            background: linear-gradient(135deg, #0b3d91 0%, #1e5fd0 72%, #ffffff 100%);
+            background: linear-gradient(135deg, #93c5fd 58%, #ffffff 100%);
             color: var(--white);
             padding: 14px 18px;
             font-weight: 700;
@@ -114,7 +114,7 @@
         }
 
         .panel-head {
-            background: linear-gradient(120deg, #0b3d91 0%, #1e5fd0 100%);
+            background: linear-gradient(120deg, #93c5fd 0%, rgb(71, 118, 201) 100%);
             color: var(--white);
             border-radius: 10px;
             padding: 10px 14px;
@@ -554,7 +554,7 @@
         const { createApp } = Vue;
         // const API_BASE = 'http://10.178.31.13:80/ckk_api/';
         const API_BASE = 'https://wattano.zoftdd.com/ckk_api/';
-        const DEFAULT_CAMERA_HOST = '192.168.123.22';
+        const DEFAULT_CAMERA_HOST = '192.168.99.2';
         const STREAM_DATA_WS_URL = `ws://${DEFAULT_CAMERA_HOST}:9901/`;
         const STREAM_META_WS_URL = `ws://${DEFAULT_CAMERA_HOST}:9902/`;
         const STREAM_WS_PROTOCOL = 'artosyn-priv';
@@ -574,6 +574,9 @@
                     timer: null,
                     reconnectTimer: null,
                     isBlackout: false,
+                    holidays: [],
+                    loadedYear: null,
+                    holidayTimer: null,
                     streamSocket: null,
                     streamMetaSocket: null,
                     streamUrl: '',
@@ -601,6 +604,15 @@
 
                 this.updateNow();
                 this.timer = setInterval(this.updateNow, 1000);
+
+                const currentYear = new Date().getFullYear();
+                this.fetchHolidays(currentYear);
+
+                this.holidayTimer = setInterval(() => {
+                    const y = new Date().getFullYear();
+                    this.fetchHolidays(y);
+                }, 5 * 60 * 1000);
+
                 this.connectSSE();
                 this.connectCameraMetaStream();
                 this.connectCameraStream();
@@ -611,6 +623,8 @@
                 if (this.timer) {
                     clearInterval(this.timer);
                 }
+
+                if (this.holidayTimer) clearInterval(this.holidayTimer);
 
                 if (this.reconnectTimer) {
                     clearTimeout(this.reconnectTimer);
@@ -669,6 +683,23 @@
                 }
             },
             methods: {
+                async fetchHolidays(year) {
+                    try {
+                        const start = `${year}-01-01`;
+                        const end = `${year}-12-31`;
+                        const res = await fetch(`${API_BASE}dayoff?start=${start}&end=${end}`);
+                        const result = await res.json();
+
+                        if (result && Array.isArray(result.data)) {
+                            this.holidays = result.data.map(item => item.date);
+                            this.loadedYear = year;
+                            console.log(`Loaded holidays for year ${year}:`, this.holidays);
+                        }
+                    } catch (error) {
+                        console.error('Failed to fetch holidays:', error);
+                    }
+                },
+
                 updateNow() {
                     const now = new Date();
                     const date = now.toLocaleDateString('th-TH', {
@@ -685,20 +716,35 @@
                 },
 
                 checkSchedule(now) {
-                    // if (!BLACKOUT_MODE_ENABLED) {
-                    //     this.isBlackout = false;
-                    //     return;
-                    // }
+                    const currentYear = now.getFullYear();
+
+                    if (this.loadedYear !== currentYear) {
+                        this.fetchHolidays(currentYear);
+                    }
+
+                    const month = String(now.getMonth() + 1).padStart(2, '0');
+                    const day = String(now.getDate()).padStart(2, '0');
+                    const todayStr = `${currentYear}-${month}-${day}`;
+
+                    if (this.holidays.includes(todayStr)) {
+                        this.isBlackout = true;
+                        return;
+                    }
+
+                    const dayOfWeek = now.getDay();
+                    if (dayOfWeek === 0 || dayOfWeek === 6) {
+                        this.isBlackout = true;
+                        return;
+                    }
 
                     const currentMinutes = now.getHours() * 60 + now.getMinutes();
+                    const openTime = 6 * 60;        // 06:00 น.
+                    const closeTime = 17 * 60 + 30;  // 08:30 น.
 
-                    const closeTime = 11 * 60 + 20;
-                    const openTime = 11 * 60 + 21;
-
-                    if (currentMinutes >= closeTime && currentMinutes < openTime) {
-                        this.isBlackout = true;
-                    } else {
+                    if (currentMinutes >= openTime && currentMinutes < closeTime) {
                         this.isBlackout = false;
+                    } else {
+                        this.isBlackout = true;
                     }
                 },
                 parseDateTime(value) {
