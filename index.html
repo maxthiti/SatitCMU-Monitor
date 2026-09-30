@@ -369,7 +369,7 @@
         <div class="dashboard-shell">
             <div class="top-bar d-flex flex-wrap justify-content-between align-items-center gap-2">
                 <div class="school-brand">
-                    <img src="Seal_of_Wattanothaipayap_School.svg" alt="Wattano Logo" class="school-logo">
+                    <img src="SatitCMU.png" alt="Wattano Logo" class="school-logo">
                     <div class="school-title">โรงเรียนวัฒโนทัยพายัพ จังหวัดเชียงใหม่</div>
                 </div>
             </div>
@@ -412,7 +412,7 @@
                             <template v-else>
                                 <div class="photo-wrap waiting-wrap">
                                     <div class="photo-card waiting-card" style="width: 100%;">
-                                        <img src="Seal_of_Wattanothaipayap_School.svg" alt="โลโก้โรงเรียน">
+                                        <img src="SatitCMU.png" alt="โลโก้โรงเรียน">
                                     </div>
                                 </div>
                                 <div class="empty-state">รอข้อมูลจากเครื่องสแกน...</div>
@@ -462,12 +462,13 @@
 
     <script>
         const { createApp } = Vue;
-        const API_BASE = 'https://wattano.zoftdd.com/ckk_api/';
+        // const API_BASE = 'http://10.178.31.13:80/ckk_api/';
+        const API_BASE = 'https://satit-facescan.edu.cmu.ac.th/ckk_api/';
         const DEFAULT_CAMERA_HOST = '192.168.99.2';
         const STREAM_DATA_WS_URL = `ws://${DEFAULT_CAMERA_HOST}:9901/`;
         const STREAM_META_WS_URL = `ws://${DEFAULT_CAMERA_HOST}:9902/`;
         const STREAM_WS_PROTOCOL = 'artosyn-priv';
-        const FALLBACK_IMAGE = 'Seal_of_Wattanothaipayap_School.svg';
+        const FALLBACK_IMAGE = 'SatitCMU.png';
         const ENABLE_NAME_ANNOUNCEMENT = false;
 
         createApp({
@@ -590,39 +591,39 @@
                     }
                 },
 
-                connectSocketIO() {
-                    if (typeof io === 'undefined') return;
+                // connectSocketIO() {
+                //     if (typeof io === 'undefined') return;
 
-                    this.socket = io('https://wattano.zoftdd.com/ckk_api/monitor', {
-                        path: '/ckk_api/socket.io',
-                        query: { sn: this.sn }
-                    });
+                //     this.socket = io('https://wattano.zoftdd.com/ckk_api/monitor', {
+                //         path: '/ckk_api/socket.io',
+                //         query: { sn: this.sn }
+                //     });
 
-                    this.socket.on('command', (res) => {
-                        if (res && String(res.sn) === String(this.sn)) {
-                            if (res.cmd === 'change' && res.data) {
-                                const mode = String(res.data).trim().toLowerCase();
-                                if (mode === 'img' || mode === 'stream') {
-                                    this.displayMode = mode;
-                                    localStorage.setItem('display_mode', mode);
+                //     this.socket.on('command', (res) => {
+                //         if (res && String(res.sn) === String(this.sn)) {
+                //             if (res.cmd === 'change' && res.data) {
+                //                 const mode = String(res.data).trim().toLowerCase();
+                //                 if (mode === 'img' || mode === 'stream') {
+                //                     this.displayMode = mode;
+                //                     localStorage.setItem('display_mode', mode);
 
-                                    if (mode === 'stream') {
-                                        this.$nextTick(() => {
-                                            this.h264NeedKeyFrame = true;
-                                            const canvas = this.$refs.mainStreamCanvas;
-                                            if (canvas) {
-                                                this.streamCanvasCtx = canvas.getContext('2d');
-                                            }
-                                        });
-                                    }
-                                }
-                            }
-                            if (res.cmd === 'switch') {
-                                this.updateScheduleData(res.data);
-                            }
-                        }
-                    });
-                },
+                //                     if (mode === 'stream') {
+                //                         this.$nextTick(() => {
+                //                             this.h264NeedKeyFrame = true;
+                //                             const canvas = this.$refs.mainStreamCanvas;
+                //                             if (canvas) {
+                //                                 this.streamCanvasCtx = canvas.getContext('2d');
+                //                             }
+                //                         });
+                //                     }
+                //                 }
+                //             }
+                //             if (res.cmd === 'switch') {
+                //                 this.updateScheduleData(res.data);
+                //             }
+                //         }
+                //     });
+                // },
 
                 updateScheduleData(dataStr) {
                     if (!dataStr || typeof dataStr !== 'string') return;
