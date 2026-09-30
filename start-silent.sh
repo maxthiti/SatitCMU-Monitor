@@ -22,23 +22,6 @@ fi
 
 sleep 5
 
-fullscreen_with_f11() {
-  if ! command -v xdotool >/dev/null 2>&1; then
-    return
-  fi
-
-  (
-    sleep 2
-    for cls in firefox Firefox google-chrome Google-chrome chromium Chromium chromium-browser; do
-      wid="$(xdotool search --onlyvisible --class "$cls" 2>/dev/null | tail -n 1 || true)"
-      if [[ -n "$wid" ]]; then
-        xdotool windowactivate "$wid" key F11 >/dev/null 2>&1 || true
-        break
-      fi
-    done
-  ) >/dev/null 2>&1 &
-}
-
 # if command -v firefox >/dev/null 2>&1; then
 #   nohup firefox --new-window "$URL" >/dev/null 2>&1 &
 #   fullscreen_with_f11
@@ -60,19 +43,14 @@ fullscreen_with_f11() {
 
 if command -v google-chrome >/dev/null 2>&1; then
   nohup google-chrome --new-window --start-fullscreen "$URL" >/dev/null 2>&1 &
-  fullscreen_with_f11
 elif command -v google-chrome-stable >/dev/null 2>&1; then
   nohup google-chrome-stable --new-window --start-fullscreen "$URL" >/dev/null 2>&1 &
-  fullscreen_with_f11
 elif command -v firefox >/dev/null 2>&1; then
-  nohup firefox --new-window "$URL" >/dev/null 2>&1 &
-  fullscreen_with_f11
+  nohup firefox --kiosk "$URL" >/dev/null 2>&1 &
 elif command -v chromium-browser >/dev/null 2>&1; then
   nohup chromium-browser --new-window --start-fullscreen "$URL" >/dev/null 2>&1 &
-  fullscreen_with_f11
 elif command -v chromium >/dev/null 2>&1; then
   nohup chromium --new-window --start-fullscreen "$URL" >/dev/null 2>&1 &
-  fullscreen_with_f11
 else
   xdg-open "$URL" >/dev/null 2>&1 || true
 fi
